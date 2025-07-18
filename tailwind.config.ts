@@ -85,7 +85,6 @@ export default {
 			transitionTimingFunction: {
 				'smooth': 'var(--transition-smooth)'
 			},
-			},
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
