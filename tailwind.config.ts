@@ -61,7 +61,30 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				// AI Service Colors
+				openai: 'hsl(var(--openai))',
+				anthropic: 'hsl(var(--anthropic))',
+				google: 'hsl(var(--google))',
+				microsoft: 'hsl(var(--microsoft))',
+				midjourney: 'hsl(var(--midjourney))',
+				github: 'hsl(var(--github))',
+				replicate: 'hsl(var(--replicate))',
+				stability: 'hsl(var(--stability))'
+			},
+			backgroundImage: {
+				'gradient-primary': 'var(--gradient-primary)',
+				'gradient-card': 'var(--gradient-card)',
+				'gradient-accent': 'var(--gradient-accent)'
+			},
+			boxShadow: {
+				'elegant': 'var(--shadow-elegant)',
+				'glow': 'var(--shadow-glow)',
+				'card': 'var(--shadow-card)'
+			},
+			transitionTimingFunction: {
+				'smooth': 'var(--transition-smooth)'
+			},
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
