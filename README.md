@@ -1,73 +1,131 @@
-# Welcome to your Lovable project
+# AI Cost Tracker 🤖💰
 
-## Project info
+A modern web application to track and manage all your AI service subscriptions and costs in one centralized dashboard.
 
-**URL**: https://lovable.dev/projects/77eb51db-4112-4480-85c6-34c386ac0568
+## 🚀 Features
 
-## How can I edit this code?
+- **Centralized Tracking**: Monitor all your AI subscriptions (ChatGPT, Claude, GitHub Copilot, API credits, etc.) in one place
+- **Visual Analytics**: Interactive charts showing spending breakdown by service and category
+- **Smart Statistics**: Real-time calculations of monthly, yearly, and total costs
+- **Service Management**: Easy add, edit, and delete functionality for AI services
+- **Billing Reminders**: Track next billing dates to avoid surprises
+- **Category Organization**: Organize services by subscriptions, credits, and one-time purchases
+- **Responsive Design**: Beautiful, mobile-friendly interface with dark/light theme support
 
-There are several ways of editing your application.
+## 🛠️ Tech Stack
 
-**Use Lovable**
+- **Frontend**: React 18 with TypeScript
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS with custom design system
+- **UI Components**: shadcn/ui with Radix UI primitives
+- **Charts**: Recharts for data visualization
+- **Icons**: Lucide React
+- **Form Handling**: React Hook Form with Zod validation
+- **Routing**: React Router DOM
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/77eb51db-4112-4480-85c6-34c386ac0568) and start prompting.
+## 📦 Installation
 
-Changes made via Lovable will be committed automatically to this repo.
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd ai-cost-tracker
+   ```
 
-**Use your preferred IDE**
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+3. **Start development server**
+   ```bash
+   npm run dev
+   ```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+4. **Build for production**
+   ```bash
+   npm run build
+   ```
 
-Follow these steps:
+## 🎯 Usage
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+1. **Add AI Services**: Click the "Add Service" button to add your AI subscriptions
+2. **Track Costs**: Enter service details including name, provider, cost, and billing cycle
+3. **View Analytics**: Check the dashboard for spending breakdowns and trends
+4. **Manage Services**: Edit or delete services as your subscriptions change
+5. **Monitor Spending**: Keep track of monthly and yearly AI expenses
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## 📊 Supported Service Types
 
-# Step 3: Install the necessary dependencies.
-npm i
+- **Subscriptions**: Monthly/yearly recurring services (ChatGPT Plus, Claude Pro, etc.)
+- **API Credits**: Pay-as-you-go services (OpenAI API, Anthropic API, etc.)
+- **One-time Purchases**: Single payments for AI tools and services
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+## 🎨 Design System
+
+The app uses a custom design system with:
+- Semantic color tokens for consistent theming
+- Gradient backgrounds and hover effects
+- Responsive grid layouts
+- Accessible form components
+- Smooth animations and transitions
+
+## 🔧 Development
+
+### Project Structure
+```
+src/
+├── components/           # Reusable UI components
+│   ├── ui/              # shadcn/ui components
+│   ├── AIServiceCard.tsx    # Service display card
+│   ├── AddServiceDialog.tsx # Add/edit service modal
+│   ├── SpendingChart.tsx    # Analytics charts
+│   └── StatsOverview.tsx    # Dashboard statistics
+├── pages/               # Page components
+├── hooks/               # Custom React hooks
+├── lib/                 # Utility functions
+└── index.css           # Global styles and design tokens
 ```
 
-**Edit a file directly in GitHub**
+### Key Components
+- `AIServiceCard`: Displays individual service information with edit/delete actions
+- `AddServiceDialog`: Modal form for adding and editing services
+- `SpendingChart`: Pie and bar charts for cost visualization
+- `StatsOverview`: Dashboard cards showing key metrics
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 🤝 Contributing
 
-**Use GitHub Codespaces**
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 📝 License
 
-## What technologies are used for this project?
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-This project is built with:
+## 🚀 Deployment
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+This project can be deployed to:
+- **Vercel**: Connect your GitHub repo for automatic deployments
+- **Netlify**: Drag and drop the `dist` folder or connect via Git
+- **GitHub Pages**: Use GitHub Actions for automated deployment
+- **Any static hosting**: Build and deploy the `dist` folder
 
-## How can I deploy this project?
+## 💡 Future Enhancements
 
-Simply open [Lovable](https://lovable.dev/projects/77eb51db-4112-4480-85c6-34c386ac0568) and click on Share -> Publish.
+- [ ] Data persistence with backend integration
+- [ ] User authentication and multi-user support
+- [ ] CSV export functionality
+- [ ] Budget alerts and notifications
+- [ ] Integration with actual service APIs
+- [ ] Mobile app version
+- [ ] Advanced analytics and insights
 
-## Can I connect a custom domain to my Lovable project?
+## 📞 Support
 
-Yes, you can!
+If you have any questions or need help, please open an issue in this repository.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+---
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+**Made with ❤️ for the AI community**
