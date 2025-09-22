@@ -102,7 +102,12 @@ src/
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Source code in this repository is variously licensed under the GNU Affero General Public License (AGPL), or the AI Cost Tracker Commercial License.
+
+* Outside of the top-level "enterprise" directory, source code in a given file is licensed under the AGPL v3.
+* Within the top-level "enterprise" directory, source code in a given file is licensed under the AI Cost Tracker Commercial License.
+
+See [LICENSE](LICENSE), [LICENSE-AGPL](LICENSE-AGPL), and [LICENSE-COMMERCIAL](LICENSE-COMMERCIAL) for details.
 
 ## 🚀 Deployment
 
