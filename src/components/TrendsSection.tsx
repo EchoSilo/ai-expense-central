@@ -7,11 +7,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 import {
   ResponsiveContainer,
-  AreaChart,
-  Area,
   LineChart,
   Line,
   XAxis,
@@ -26,7 +23,6 @@ import {
 } from "recharts";
 import { AIService } from "./AIServiceCard";
 import {
-  getStackedDaily,
   getDailyTotals,
   getBaselineStats,
   getHourlyHeatmap,
@@ -50,14 +46,12 @@ function fmt(v: number) {
 
 interface Props {
   services: AIService[];
+  range: 7 | 30 | 90;
 }
 
-export function TrendsSection({ services }: Props) {
-  const [range, setRange] = useState<7 | 30 | 90>(30);
+export function TrendsSection({ services, range }: Props) {
   const [selectedId, setSelectedId] = useState<string>(services[0]?.id ?? "");
   const isAll = selectedId === "__all__";
-
-  const stacked = useMemo(() => getStackedDaily(services, range), [services, range]);
 
   const selectedService = services.find((s) => s.id === selectedId) ?? services[0];
 
@@ -97,72 +91,6 @@ export function TrendsSection({ services }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <h2 className="text-xl font-semibold text-foreground">Cost trends</h2>
-        <div className="flex gap-1 bg-muted rounded-md p-1">
-          {[7, 30, 90].map((d) => (
-            <Button
-              key={d}
-              size="sm"
-              variant={range === d ? "default" : "ghost"}
-              className="h-7 px-3 text-xs"
-              onClick={() => setRange(d as 7 | 30 | 90)}
-            >
-              {d}d
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      <Card className="bg-gradient-card shadow-card border-border/50">
-        <CardHeader>
-          <CardTitle className="text-foreground">Spend across all services</CardTitle>
-          <CardDescription className="text-muted-foreground">
-            Stacked daily cost — last {range} days
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={280}>
-            <AreaChart data={stacked}>
-              <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
-              <XAxis
-                dataKey="date"
-                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
-                tickFormatter={(v) => String(v).slice(5)}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
-                tickFormatter={(v) => `$${v}`}
-                axisLine={false}
-                tickLine={false}
-              />
-              <Tooltip
-                contentStyle={{
-                  background: "hsl(var(--popover))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: 8,
-                }}
-                formatter={(v: number) => fmt(v)}
-              />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
-              {services.map((s, i) => (
-                <Area
-                  key={s.id}
-                  type="monotone"
-                  dataKey={s.name}
-                  stackId="1"
-                  stroke={SERIES_COLORS[i % SERIES_COLORS.length]}
-                  fill={SERIES_COLORS[i % SERIES_COLORS.length]}
-                  fillOpacity={0.5}
-                />
-              ))}
-            </AreaChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="bg-gradient-card shadow-card border-border/50">
           <CardHeader className="flex flex-row items-start justify-between space-y-0">
