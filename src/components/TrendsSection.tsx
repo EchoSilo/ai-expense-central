@@ -55,23 +55,37 @@ interface Props {
 export function TrendsSection({ services }: Props) {
   const [range, setRange] = useState<7 | 30 | 90>(30);
   const [selectedId, setSelectedId] = useState<string>(services[0]?.id ?? "");
+  const isAll = selectedId === "__all__";
 
   const stacked = useMemo(() => getStackedDaily(services, range), [services, range]);
 
   const selectedService = services.find((s) => s.id === selectedId) ?? services[0];
 
   const lineData = useMemo(() => {
+    if (isAll) {
+      const byDate = new Map<string, Record<string, number | string>>();
+      for (const s of services) {
+        for (const d of getDailyTotals(s, range)) {
+          const row = (byDate.get(d.date) ?? { date: d.date.slice(5) }) as Record<string, number | string>;
+          row[s.name] = Number(d.cost.toFixed(2));
+          byDate.set(d.date, row);
+        }
+      }
+      return Array.from(byDate.values()).sort((a, b) =>
+        String(a.date).localeCompare(String(b.date))
+      );
+    }
     if (!selectedService) return [];
     return getDailyTotals(selectedService, range).map((d) => ({
       date: d.date.slice(5),
       cost: Number(d.cost.toFixed(2)),
       anomalyCost: d.anomaly ? Number(d.cost.toFixed(2)) : null,
     }));
-  }, [selectedService, range]);
+  }, [isAll, services, selectedService, range]);
 
   const baseline = useMemo(
-    () => (selectedService ? getBaselineStats(selectedService) : { mean: 0, upper: 0, lower: 0, std: 0 }),
-    [selectedService]
+    () => (selectedService && !isAll ? getBaselineStats(selectedService) : { mean: 0, upper: 0, lower: 0, std: 0 }),
+    [selectedService, isAll]
   );
 
   const heatmap = useMemo(
@@ -163,6 +177,7 @@ export function TrendsSection({ services }: Props) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border">
+                <SelectItem value="__all__">All services</SelectItem>
                 {services.map((s) => (
                   <SelectItem key={s.id} value={s.id}>
                     {s.name}
@@ -195,35 +210,53 @@ export function TrendsSection({ services }: Props) {
                   }}
                   formatter={(v: number) => fmt(v)}
                 />
-                <ReferenceArea
-                  y1={baseline.lower}
-                  y2={baseline.upper}
-                  fill="hsl(var(--primary))"
-                  fillOpacity={0.08}
-                />
-                <ReferenceLine
-                  y={baseline.mean}
-                  stroke="hsl(var(--primary))"
-                  strokeDasharray="4 4"
-                  label={{
-                    value: `baseline ${fmt(baseline.mean)}`,
-                    fill: "hsl(var(--muted-foreground))",
-                    fontSize: 10,
-                    position: "insideTopRight",
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="cost"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                  dot={false}
-                />
-                <Scatter
-                  dataKey="anomalyCost"
-                  fill="hsl(var(--destructive))"
-                  shape="circle"
-                />
+                {isAll ? (
+                  <>
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                    {services.map((s, i) => (
+                      <Line
+                        key={s.id}
+                        type="monotone"
+                        dataKey={s.name}
+                        stroke={SERIES_COLORS[i % SERIES_COLORS.length]}
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    <ReferenceArea
+                      y1={baseline.lower}
+                      y2={baseline.upper}
+                      fill="hsl(var(--primary))"
+                      fillOpacity={0.08}
+                    />
+                    <ReferenceLine
+                      y={baseline.mean}
+                      stroke="hsl(var(--primary))"
+                      strokeDasharray="4 4"
+                      label={{
+                        value: `baseline ${fmt(baseline.mean)}`,
+                        fill: "hsl(var(--muted-foreground))",
+                        fontSize: 10,
+                        position: "insideTopRight",
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="cost"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                    <Scatter
+                      dataKey="anomalyCost"
+                      fill="hsl(var(--destructive))"
+                      shape="circle"
+                    />
+                  </>
+                )}
               </ComposedChart>
             </ResponsiveContainer>
           </CardContent>
