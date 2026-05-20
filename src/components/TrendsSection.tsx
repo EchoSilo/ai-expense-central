@@ -55,23 +55,37 @@ interface Props {
 export function TrendsSection({ services }: Props) {
   const [range, setRange] = useState<7 | 30 | 90>(30);
   const [selectedId, setSelectedId] = useState<string>(services[0]?.id ?? "");
+  const isAll = selectedId === "__all__";
 
   const stacked = useMemo(() => getStackedDaily(services, range), [services, range]);
 
   const selectedService = services.find((s) => s.id === selectedId) ?? services[0];
 
   const lineData = useMemo(() => {
+    if (isAll) {
+      const byDate = new Map<string, Record<string, number | string>>();
+      for (const s of services) {
+        for (const d of getDailyTotals(s, range)) {
+          const row = (byDate.get(d.date) ?? { date: d.date.slice(5) }) as Record<string, number | string>;
+          row[s.name] = Number(d.cost.toFixed(2));
+          byDate.set(d.date, row);
+        }
+      }
+      return Array.from(byDate.values()).sort((a, b) =>
+        String(a.date).localeCompare(String(b.date))
+      );
+    }
     if (!selectedService) return [];
     return getDailyTotals(selectedService, range).map((d) => ({
       date: d.date.slice(5),
       cost: Number(d.cost.toFixed(2)),
       anomalyCost: d.anomaly ? Number(d.cost.toFixed(2)) : null,
     }));
-  }, [selectedService, range]);
+  }, [isAll, services, selectedService, range]);
 
   const baseline = useMemo(
-    () => (selectedService ? getBaselineStats(selectedService) : { mean: 0, upper: 0, lower: 0, std: 0 }),
-    [selectedService]
+    () => (selectedService && !isAll ? getBaselineStats(selectedService) : { mean: 0, upper: 0, lower: 0, std: 0 }),
+    [selectedService, isAll]
   );
 
   const heatmap = useMemo(
