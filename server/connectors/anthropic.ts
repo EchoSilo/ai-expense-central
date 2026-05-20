@@ -1,10 +1,17 @@
 import { SyncResult, requireEnv, apiError } from "./index";
 
 export async function anthropicConnector(yearMonth: string): Promise<SyncResult> {
-  const key = requireEnv("ANTHROPIC_API_KEY");
+  // Cost API requires an Admin key (sk-ant-admin...), not a standard API key.
+  // Generate one at: console.anthropic.com/settings/admin-keys
+  const key = requireEnv("ANTHROPIC_ADMIN_KEY");
 
-  // Verify the key is valid by hitting the models endpoint
-  const res = await fetch("https://api.anthropic.com/v1/models", {
+  const [year, month] = yearMonth.split("-").map(Number);
+  const startingAt = new Date(year, month - 1, 1).toISOString();
+  const endingAt = new Date(year, month, 1).toISOString();
+
+  const url = `https://api.anthropic.com/v1/organizations/cost_report?starting_at=${startingAt}&ending_at=${endingAt}&bucket_width=1d`;
+
+  const res = await fetch(url, {
     headers: {
       "x-api-key": key,
       "anthropic-version": "2023-06-01",
@@ -13,12 +20,20 @@ export async function anthropicConnector(yearMonth: string): Promise<SyncResult>
 
   if (!res.ok) throw apiError(res.status, await res.text());
 
-  // Anthropic does not yet expose a public billing/usage cost API.
-  // Direct the user to the console for the actual spend figure.
+  const json = await res.json();
+
+  // Costs are returned as decimal strings in cents; sum across all daily buckets
+  const totalCents: number = (json.data ?? []).reduce((sum: number, bucket: any) => {
+    const bucketCost = parseFloat(bucket.cost ?? bucket.total_cost ?? "0");
+    return sum + bucketCost;
+  }, 0);
+
+  const amount = Math.round((totalCents / 100) * 100) / 100;
+
   return {
-    amount: 0,
+    amount,
     currency: "USD",
-    note: `Anthropic key verified ✓ — check console.anthropic.com/settings/billing for ${yearMonth} spend, then log it manually`,
+    note: `Anthropic org cost via Admin API (${yearMonth})`,
     supported: true,
   };
 }
