@@ -51,5 +51,5 @@ app.get("/api/providers", (_req, res) => {
   res.json({ supported, stubs });
 });
 
-const PORT = process.env.SERVER_PORT ?? 3001;
+const PORT = process.env.SERVER_PORT ?? 4040;
 app.listen(PORT, () => console.log(`[server] listening on :${PORT}`));
