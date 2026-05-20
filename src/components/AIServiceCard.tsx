@@ -45,12 +45,14 @@ const getProviderColor = (provider: string) => {
   return colors[provider] || 'primary';
 };
 
-export function AIServiceCard({ service, onEdit, onDelete }: AIServiceCardProps) {
+export function AIServiceCard({ service, onEdit, onDelete, onOpen }: AIServiceCardProps) {
   const providerColor = getProviderColor(service.provider);
-  
-  const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
+  const status = service.keyStatus ?? 'healthy';
+  const statusStyles: Record<string, string> = {
+    healthy: 'bg-primary/10 text-primary border-primary/20',
+    warning: 'bg-anthropic/10 text-anthropic border-anthropic/20',
+    compromised: 'bg-destructive/15 text-destructive border-destructive/30',
+  };
       currency: 'USD',
     }).format(amount);
   };
