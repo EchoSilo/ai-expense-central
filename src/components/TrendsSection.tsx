@@ -177,20 +177,6 @@ export function TrendsSection({ services }: Props) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border">
-                {services.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </CardHeader>
-          <CardContent>
-            <Select value={selectedId} onValueChange={setSelectedId}>
-              <SelectTrigger className="w-[180px] bg-input border-border">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border-border">
                 <SelectItem value="__all__">All services</SelectItem>
                 {services.map((s) => (
                   <SelectItem key={s.id} value={s.id}>
@@ -224,35 +210,53 @@ export function TrendsSection({ services }: Props) {
                   }}
                   formatter={(v: number) => fmt(v)}
                 />
-                <ReferenceArea
-                  y1={baseline.lower}
-                  y2={baseline.upper}
-                  fill="hsl(var(--primary))"
-                  fillOpacity={0.08}
-                />
-                <ReferenceLine
-                  y={baseline.mean}
-                  stroke="hsl(var(--primary))"
-                  strokeDasharray="4 4"
-                  label={{
-                    value: `baseline ${fmt(baseline.mean)}`,
-                    fill: "hsl(var(--muted-foreground))",
-                    fontSize: 10,
-                    position: "insideTopRight",
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="cost"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                  dot={false}
-                />
-                <Scatter
-                  dataKey="anomalyCost"
-                  fill="hsl(var(--destructive))"
-                  shape="circle"
-                />
+                {isAll ? (
+                  <>
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                    {services.map((s, i) => (
+                      <Line
+                        key={s.id}
+                        type="monotone"
+                        dataKey={s.name}
+                        stroke={SERIES_COLORS[i % SERIES_COLORS.length]}
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    <ReferenceArea
+                      y1={baseline.lower}
+                      y2={baseline.upper}
+                      fill="hsl(var(--primary))"
+                      fillOpacity={0.08}
+                    />
+                    <ReferenceLine
+                      y={baseline.mean}
+                      stroke="hsl(var(--primary))"
+                      strokeDasharray="4 4"
+                      label={{
+                        value: `baseline ${fmt(baseline.mean)}`,
+                        fill: "hsl(var(--muted-foreground))",
+                        fontSize: 10,
+                        position: "insideTopRight",
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="cost"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                    <Scatter
+                      dataKey="anomalyCost"
+                      fill="hsl(var(--destructive))"
+                      shape="circle"
+                    />
+                  </>
+                )}
               </ComposedChart>
             </ResponsiveContainer>
           </CardContent>
