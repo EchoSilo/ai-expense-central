@@ -53,6 +53,10 @@ export function AIServiceCard({ service, onEdit, onDelete, onOpen }: AIServiceCa
     warning: 'bg-anthropic/10 text-anthropic border-anthropic/20',
     compromised: 'bg-destructive/15 text-destructive border-destructive/30',
   };
+
+  const formatAmount = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
       currency: 'USD',
     }).format(amount);
   };
