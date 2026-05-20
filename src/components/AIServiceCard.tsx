@@ -18,12 +18,17 @@ export interface AIService {
   category: 'subscription' | 'usage' | 'credits';
   color: string;
   nextBilling?: Date;
+  expectedMonthlyBudget?: number;
+  baselineDailyCost?: number;
+  keyLabel?: string;
+  keyStatus?: 'healthy' | 'warning' | 'compromised';
 }
 
 interface AIServiceCardProps {
   service: AIService;
   onEdit: (service: AIService) => void;
   onDelete: (id: string) => void;
+  onOpen?: (service: AIService) => void;
 }
 
 const getProviderColor = (provider: string) => {
