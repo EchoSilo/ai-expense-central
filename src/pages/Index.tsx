@@ -1,83 +1,104 @@
-// Update this page (the content is just a fallback if you fail to update the page)
-
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Bot, TrendingUp } from "lucide-react";
 import { AIService, AIServiceCard } from "@/components/AIServiceCard";
 import { AddServiceDialog } from "@/components/AddServiceDialog";
 import { StatsOverview } from "@/components/StatsOverview";
 import { SpendingChart } from "@/components/SpendingChart";
+import { AlertsBanner } from "@/components/AlertsBanner";
+import { AlertsDrawer } from "@/components/AlertsDrawer";
+import { ServiceDetailDrawer } from "@/components/ServiceDetailDrawer";
+import { detectAlerts } from "@/lib/mockUsage";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const [services, setServices] = useState<AIService[]>([
     {
-      id: '1',
-      name: 'ChatGPT Plus',
-      provider: 'OpenAI',
+      id: "1",
+      name: "ChatGPT Plus",
+      provider: "OpenAI",
       amount: 20,
-      billingCycle: 'monthly',
-      category: 'subscription',
-      color: '#10a37f',
+      billingCycle: "monthly",
+      category: "subscription",
+      color: "#10a37f",
       nextBilling: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+      expectedMonthlyBudget: 30,
+      baselineDailyCost: 0.8,
+      keyLabel: "sk-…4f2a",
+      keyStatus: "compromised",
     },
     {
-      id: '2',
-      name: 'Claude Pro',
-      provider: 'Anthropic',
+      id: "2",
+      name: "Claude Pro",
+      provider: "Anthropic",
       amount: 20,
-      billingCycle: 'monthly',
-      category: 'subscription',
-      color: '#ff6b35',
+      billingCycle: "monthly",
+      category: "subscription",
+      color: "#ff6b35",
       nextBilling: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000),
+      expectedMonthlyBudget: 25,
+      baselineDailyCost: 0.7,
+      keyLabel: "sk-ant-…91c",
+      keyStatus: "healthy",
     },
     {
-      id: '3',
-      name: 'GitHub Copilot',
-      provider: 'GitHub',
+      id: "3",
+      name: "GitHub Copilot",
+      provider: "GitHub",
       amount: 10,
-      billingCycle: 'monthly',
-      category: 'subscription',
-      color: '#24292e',
+      billingCycle: "monthly",
+      category: "subscription",
+      color: "#24292e",
       nextBilling: new Date(Date.now() + 22 * 24 * 60 * 60 * 1000),
+      expectedMonthlyBudget: 12,
+      baselineDailyCost: 0.35,
+      keyLabel: "ghp_…7d3",
+      keyStatus: "healthy",
     },
     {
-      id: '4',
-      name: 'API Credits',
-      provider: 'OpenAI',
+      id: "4",
+      name: "API Credits",
+      provider: "OpenAI",
       amount: 50,
-      billingCycle: 'one-time',
-      category: 'credits',
-      color: '#10a37f',
+      billingCycle: "one-time",
+      category: "credits",
+      color: "#10a37f",
+      expectedMonthlyBudget: 40,
+      baselineDailyCost: 1.5,
+      keyLabel: "sk-…b18e",
+      keyStatus: "warning",
     },
   ]);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<AIService | undefined>();
+  const [alertsOpen, setAlertsOpen] = useState(false);
+  const [detailService, setDetailService] = useState<AIService | null>(null);
+  const [dismissedAlertIds, setDismissedAlertIds] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
-  const handleAddService = (newService: Omit<AIService, 'id'>) => {
+  const alerts = useMemo(
+    () => detectAlerts(services).filter((a) => !dismissedAlertIds.has(a.id)),
+    [services, dismissedAlertIds]
+  );
+
+  const handleAddService = (newService: Omit<AIService, "id">) => {
     if (editingService) {
-      setServices(prev => prev.map(s => 
-        s.id === editingService.id 
-          ? { ...newService, id: editingService.id }
-          : s
-      ));
-      toast({
-        title: "Service updated",
-        description: "Your AI service has been updated successfully.",
-      });
+      setServices((prev) =>
+        prev.map((s) =>
+          s.id === editingService.id ? { ...newService, id: editingService.id } : s
+        )
+      );
+      toast({ title: "Service updated", description: "Your AI service has been updated." });
       setEditingService(undefined);
     } else {
       const service: AIService = {
         ...newService,
         id: Date.now().toString(),
+        keyStatus: "healthy",
       };
-      setServices(prev => [...prev, service]);
-      toast({
-        title: "Service added",
-        description: "Your AI service has been added to the tracker.",
-      });
+      setServices((prev) => [...prev, service]);
+      toast({ title: "Service added", description: "Your AI service has been added." });
     }
   };
 
@@ -87,17 +108,24 @@ const Index = () => {
   };
 
   const handleDeleteService = (id: string) => {
-    setServices(prev => prev.filter(s => s.id !== id));
-    toast({
-      title: "Service deleted",
-      description: "The AI service has been removed from your tracker.",
-      variant: "destructive",
+    setServices((prev) => prev.filter((s) => s.id !== id));
+    toast({ title: "Service deleted", variant: "destructive" });
+  };
+
+  const handleRotateKey = (id: string) => {
+    setServices((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, keyStatus: "healthy" } : s))
+    );
+    setDismissedAlertIds((prev) => {
+      const next = new Set(prev);
+      alerts.filter((a) => a.serviceId === id).forEach((a) => next.add(a.id));
+      return next;
     });
+    toast({ title: "Key rotated", description: "Service marked as healthy." });
   };
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <div className="border-b border-border/50 bg-gradient-card">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
@@ -119,13 +147,12 @@ const Index = () => {
       </div>
 
       <div className="container mx-auto px-4 py-8 space-y-8">
-        {/* Stats Overview */}
-        <StatsOverview services={services} />
+        <AlertsBanner alerts={alerts} onOpen={() => setAlertsOpen(true)} />
 
-        {/* Charts */}
+        <StatsOverview services={services} alertCount={alerts.length} />
+
         <SpendingChart services={services} />
 
-        {/* Services Grid */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-foreground">Your AI Services</h2>
@@ -134,12 +161,14 @@ const Index = () => {
               {services.length} active services
             </div>
           </div>
-          
+
           {services.length === 0 ? (
             <div className="text-center py-12">
               <Bot className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">No AI services yet</h3>
-              <p className="text-muted-foreground mb-4">Start tracking your AI costs by adding your first service.</p>
+              <p className="text-muted-foreground mb-4">
+                Start tracking your AI costs by adding your first service.
+              </p>
               <Button onClick={() => setDialogOpen(true)} className="bg-gradient-primary">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Your First Service
@@ -153,6 +182,7 @@ const Index = () => {
                   service={service}
                   onEdit={handleEditService}
                   onDelete={handleDeleteService}
+                  onOpen={setDetailService}
                 />
               ))}
             </div>
@@ -168,6 +198,28 @@ const Index = () => {
         }}
         onAdd={handleAddService}
         editingService={editingService}
+      />
+
+      <AlertsDrawer
+        open={alertsOpen}
+        onOpenChange={setAlertsOpen}
+        alerts={alerts}
+        services={services}
+        onRotateKey={handleRotateKey}
+        onDismiss={(id) =>
+          setDismissedAlertIds((prev) => {
+            const next = new Set(prev);
+            next.add(id);
+            return next;
+          })
+        }
+      />
+
+      <ServiceDetailDrawer
+        service={detailService}
+        open={!!detailService}
+        onOpenChange={(open) => !open && setDetailService(null)}
+        onRotateKey={handleRotateKey}
       />
     </div>
   );
