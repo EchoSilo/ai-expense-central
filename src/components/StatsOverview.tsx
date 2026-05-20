@@ -8,7 +8,7 @@ interface StatsOverviewProps {
   alertCount: number;
 }
 
-export function StatsOverview({ services, alertCount }: StatsOverviewProps) {
+export function StatsOverview({ services, alertCount = 0 }: StatsOverviewProps) {
   const totalMonthly = services
     .filter((s) => s.billingCycle === "monthly")
     .reduce((sum, s) => sum + s.amount, 0);
