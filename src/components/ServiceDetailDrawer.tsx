@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { format, parse } from "date-fns";
 import {
   Sheet,
   SheetContent,
@@ -9,7 +10,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { KeyRound, ExternalLink } from "lucide-react";
+import { KeyRound, ExternalLink, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { CostEntry, AnomalyResult } from "@/lib/types";
+import { computeAnomaly } from "@/hooks/use-cost-history";
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -39,6 +42,8 @@ interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onRotateKey: (id: string) => void;
+  costEntries?: CostEntry[];
+  onLogCost?: (service: AIService) => void;
 }
 
 const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
@@ -50,8 +55,22 @@ const PIE_COLORS = [
   "hsl(var(--replicate))",
 ];
 
-export function ServiceDetailDrawer({ service, open, onOpenChange, onRotateKey }: Props) {
+export function ServiceDetailDrawer({ service, open, onOpenChange, onRotateKey, costEntries = [], onLogCost }: Props) {
   const [notes, setNotes] = useState("");
+
+  const serviceEntries = useMemo(
+    () =>
+      costEntries
+        .filter((e) => e.serviceId === service?.id)
+        .sort((a, b) => b.yearMonth.localeCompare(a.yearMonth)),
+    [costEntries, service?.id]
+  );
+
+  const latestEntry = serviceEntries[0] ?? null;
+  const latestAnomaly: AnomalyResult | null = useMemo(() => {
+    if (!latestEntry || !service) return null;
+    return computeAnomaly(costEntries, service.id, latestEntry.yearMonth);
+  }, [costEntries, latestEntry, service]);
 
   const data = useMemo(() => {
     if (!service) return null;
@@ -102,6 +121,55 @@ export function ServiceDetailDrawer({ service, open, onOpenChange, onRotateKey }
         </SheetHeader>
 
         <div className="mt-6 space-y-6">
+
+          {/* Logged cost summary */}
+          {serviceEntries.length > 0 && latestEntry ? (
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-muted/30 rounded-lg p-3 text-center">
+                <p className="text-xs text-muted-foreground mb-1">Baseline</p>
+                <p className="text-sm font-semibold text-foreground">
+                  {latestAnomaly ? `$${latestAnomaly.baseline.toFixed(2)}` : '—'}
+                </p>
+              </div>
+              <div className="bg-muted/30 rounded-lg p-3 text-center">
+                <p className="text-xs text-muted-foreground mb-1">
+                  {format(parse(latestEntry.yearMonth, 'yyyy-MM', new Date()), 'MMM yyyy')}
+                </p>
+                <p className="text-sm font-semibold text-foreground">
+                  ${latestEntry.amount.toFixed(2)}
+                </p>
+              </div>
+              <div className="bg-muted/30 rounded-lg p-3 text-center">
+                <p className="text-xs text-muted-foreground mb-1">Deviation</p>
+                <p className={`text-sm font-semibold ${
+                  latestAnomaly?.severity === 'critical'
+                    ? 'text-destructive'
+                    : latestAnomaly?.severity === 'warning'
+                    ? 'text-yellow-500'
+                    : 'text-primary'
+                }`}>
+                  {latestAnomaly
+                    ? `${latestAnomaly.deviationPct > 0 ? '+' : ''}${latestAnomaly.deviationPct.toFixed(0)}%`
+                    : '—'}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-muted/20 rounded-lg p-4 text-center">
+              <p className="text-sm text-muted-foreground">
+                No cost entries logged yet.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-2 border-border"
+                onClick={() => service && onLogCost?.(service)}
+              >
+                Log your first entry
+              </Button>
+            </div>
+          )}
+
           <div>
             <p className="text-sm font-medium text-foreground mb-2">30-day spend vs baseline</p>
             <ResponsiveContainer width="100%" height={220}>
@@ -165,6 +233,65 @@ export function ServiceDetailDrawer({ service, open, onOpenChange, onRotateKey }
               </ResponsiveContainer>
             </div>
           </div>
+
+          {/* Logged cost history table */}
+          {serviceEntries.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-medium text-foreground">Cost history</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs border-border"
+                  onClick={() => service && onLogCost?.(service)}
+                >
+                  + Log Cost
+                </Button>
+              </div>
+              <div className="space-y-1">
+                {serviceEntries.map((entry) => {
+                  const rowAnomaly = computeAnomaly(costEntries, entry.serviceId, entry.yearMonth);
+                  return (
+                    <div
+                      key={entry.id}
+                      className="flex items-center justify-between text-xs py-2 px-3 rounded-md bg-muted/20 hover:bg-muted/30 transition-colors"
+                    >
+                      <span className="text-muted-foreground w-20 shrink-0">
+                        {format(parse(entry.yearMonth, 'yyyy-MM', new Date()), 'MMM yyyy')}
+                      </span>
+                      <span className="font-medium text-foreground w-20 text-right shrink-0">
+                        ${entry.amount.toFixed(2)}
+                      </span>
+                      <span className={`w-16 text-right shrink-0 ${
+                        rowAnomaly.deviationPct > 0 ? 'text-destructive' : 'text-primary'
+                      }`}>
+                        {rowAnomaly.dataPoints >= 2
+                          ? `${rowAnomaly.deviationPct > 0 ? '+' : ''}${rowAnomaly.deviationPct.toFixed(0)}%`
+                          : '—'}
+                      </span>
+                      <span className="flex items-center gap-1 justify-end w-20 shrink-0">
+                        {rowAnomaly.isAnomaly ? (
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] px-1.5 py-0 h-4 ${
+                              rowAnomaly.severity === 'critical'
+                                ? 'border-destructive/40 text-destructive bg-destructive/10'
+                                : 'border-yellow-500/40 text-yellow-500 bg-yellow-500/10'
+                            }`}
+                          >
+                            <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />
+                            {rowAnomaly.severity}
+                          </Badge>
+                        ) : rowAnomaly.dataPoints >= 2 ? (
+                          <CheckCircle2 className="h-3 w-3 text-primary" />
+                        ) : null}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div className="border-t border-border pt-4 space-y-3">
             <p className="text-sm font-medium text-foreground">Key management</p>
