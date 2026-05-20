@@ -186,6 +186,21 @@ export function TrendsSection({ services }: Props) {
             </Select>
           </CardHeader>
           <CardContent>
+            <Select value={selectedId} onValueChange={setSelectedId}>
+              <SelectTrigger className="w-[180px] bg-input border-border">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border-border">
+                <SelectItem value="__all__">All services</SelectItem>
+                {services.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardHeader>
+          <CardContent>
             <ResponsiveContainer width="100%" height={260}>
               <ComposedChart data={lineData}>
                 <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
