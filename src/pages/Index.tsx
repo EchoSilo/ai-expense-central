@@ -8,8 +8,10 @@ import { SpendingChart } from "@/components/SpendingChart";
 import { AlertsBanner } from "@/components/AlertsBanner";
 import { AlertsDrawer } from "@/components/AlertsDrawer";
 import { ServiceDetailDrawer } from "@/components/ServiceDetailDrawer";
+import { LogCostDialog } from "@/components/LogCostDialog";
 import { detectAlerts } from "@/lib/mockUsage";
 import { useToast } from "@/hooks/use-toast";
+import { useCostHistory } from "@/hooks/use-cost-history";
 
 const Index = () => {
   const [services, setServices] = useState<AIService[]>([
@@ -74,8 +76,23 @@ const Index = () => {
   const [editingService, setEditingService] = useState<AIService | undefined>();
   const [alertsOpen, setAlertsOpen] = useState(false);
   const [detailService, setDetailService] = useState<AIService | null>(null);
+  const [logCostService, setLogCostService] = useState<AIService | null>(null);
   const [dismissedAlertIds, setDismissedAlertIds] = useState<Set<string>>(new Set());
   const { toast } = useToast();
+
+  const {
+    entries,
+    addOrUpdateEntry,
+    getEntriesForService,
+    getLatestAnomalyForService,
+    getBaselineForService,
+  } = useCostHistory();
+
+  const anomalyMap = useMemo(() => {
+    const map = new Map<string, ReturnType<typeof getLatestAnomalyForService>>();
+    for (const s of services) map.set(s.id, getLatestAnomalyForService(s.id));
+    return map;
+  }, [services, entries, getLatestAnomalyForService]);
 
   const alerts = useMemo(
     () => detectAlerts(services).filter((a) => !dismissedAlertIds.has(a.id)),
@@ -183,6 +200,8 @@ const Index = () => {
                   onEdit={handleEditService}
                   onDelete={handleDeleteService}
                   onOpen={setDetailService}
+                  onLogCost={setLogCostService}
+                  anomaly={anomalyMap.get(service.id)}
                 />
               ))}
             </div>
@@ -220,6 +239,23 @@ const Index = () => {
         open={!!detailService}
         onOpenChange={(open) => !open && setDetailService(null)}
         onRotateKey={handleRotateKey}
+        costEntries={detailService ? getEntriesForService(detailService.id) : []}
+        onLogCost={setLogCostService}
+      />
+
+      <LogCostDialog
+        service={logCostService}
+        open={!!logCostService}
+        onOpenChange={(open) => !open && setLogCostService(null)}
+        existingEntry={
+          logCostService
+            ? getEntriesForService(logCostService.id).find(
+                (e) => e.yearMonth === new Date().toISOString().slice(0, 7)
+              )
+            : undefined
+        }
+        baseline={logCostService ? getBaselineForService(logCostService.id) : 0}
+        onSave={addOrUpdateEntry}
       />
     </div>
   );
