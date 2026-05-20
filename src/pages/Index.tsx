@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Bot, TrendingUp } from "lucide-react";
+import { Plus, Bot, TrendingUp, RefreshCw } from "lucide-react";
+import { toProviderKey, isSyncable } from "@/lib/providerKey";
 import { AIService, AIServiceCard } from "@/components/AIServiceCard";
 import { AddServiceDialog } from "@/components/AddServiceDialog";
 import { StatsOverview } from "@/components/StatsOverview";
@@ -129,6 +130,39 @@ const Index = () => {
     toast({ title: "Service deleted", variant: "destructive" });
   };
 
+  const currentYearMonth = new Date().toISOString().slice(0, 7);
+
+  const handleSyncAll = async () => {
+    const syncable = services.filter((s) => isSyncable(s.provider));
+    if (syncable.length === 0) {
+      toast({ title: "No syncable services", description: "Add OpenAI, Anthropic, ElevenLabs, AssemblyAI, or HeyGen services first." });
+      return;
+    }
+    const results = await Promise.allSettled(
+      syncable.map(async (s) => {
+        const key = toProviderKey(s.provider);
+        const res = await fetch(`/api/sync/${key}?yearMonth=${currentYearMonth}`);
+        const json: any = await res.json();
+        if (!res.ok) throw { ...json, provider: s.provider };
+        return { service: s, result: json };
+      })
+    );
+    let synced = 0;
+    for (const r of results) {
+      if (r.status === "fulfilled") {
+        const { service, result } = r.value;
+        if (result.supported && result.amount > 0) {
+          addOrUpdateEntry({ serviceId: service.id, yearMonth: currentYearMonth, amount: result.amount, note: result.note });
+          synced++;
+        }
+      }
+    }
+    const failed = results.filter((r) => r.status === "rejected").length;
+    if (synced > 0) toast({ title: `Synced ${synced} service${synced > 1 ? "s" : ""}` });
+    if (failed > 0) toast({ title: `${failed} service${failed > 1 ? "s" : ""} failed`, description: "Check .env API keys and restart the server.", variant: "destructive" });
+    if (synced === 0 && failed === 0) toast({ title: "No cost data returned", description: "Check API key permissions." });
+  };
+
   const handleRotateKey = (id: string) => {
     setServices((prev) =>
       prev.map((s) => (s.id === id ? { ...s, keyStatus: "healthy" } : s))
@@ -173,9 +207,15 @@ const Index = () => {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-foreground">Your AI Services</h2>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <TrendingUp className="h-4 w-4" />
-              {services.length} active services
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                <TrendingUp className="h-4 w-4" />
+                {services.length} active services
+              </span>
+              <Button variant="outline" size="sm" onClick={handleSyncAll} className="gap-1">
+                <RefreshCw className="h-3.5 w-3.5" />
+                Sync All
+              </Button>
             </div>
           </div>
 
@@ -201,6 +241,8 @@ const Index = () => {
                   onDelete={handleDeleteService}
                   onOpen={setDetailService}
                   onLogCost={setLogCostService}
+                  onSaveEntry={addOrUpdateEntry}
+                  yearMonth={currentYearMonth}
                   anomaly={anomalyMap.get(service.id)}
                 />
               ))}

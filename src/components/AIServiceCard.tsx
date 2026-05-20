@@ -9,7 +9,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { AnomalyResult } from "@/lib/types";
+import { AnomalyResult, CostEntry } from "@/lib/types";
+import { SyncButton } from "@/components/SyncButton";
+import { isSyncable } from "@/lib/providerKey";
 
 export interface AIService {
   id: string;
@@ -32,6 +34,8 @@ interface AIServiceCardProps {
   onDelete: (id: string) => void;
   onOpen?: (service: AIService) => void;
   onLogCost?: (service: AIService) => void;
+  onSaveEntry?: (entry: Omit<CostEntry, "id" | "loggedAt">) => void;
+  yearMonth?: string;
   anomaly?: AnomalyResult | null;
 }
 
@@ -45,11 +49,17 @@ const getProviderColor = (provider: string) => {
     'GitHub': 'github',
     'Replicate': 'replicate',
     'Stability AI': 'stability',
+    'ElevenLabs': 'primary',
+    'AssemblyAI': 'google',
+    'HeyGen': 'replicate',
+    'Replit': 'github',
+    'Lovable': 'anthropic',
   };
   return colors[provider] || 'primary';
 };
 
-export function AIServiceCard({ service, onEdit, onDelete, onOpen, onLogCost, anomaly }: AIServiceCardProps) {
+export function AIServiceCard({ service, onEdit, onDelete, onOpen, onLogCost, onSaveEntry, yearMonth, anomaly }: AIServiceCardProps) {
+  const currentYearMonth = yearMonth ?? new Date().toISOString().slice(0, 7);
   const providerColor = getProviderColor(service.provider);
   const status = service.keyStatus ?? 'healthy';
   const statusStyles: Record<string, string> = {
@@ -103,6 +113,9 @@ export function AIServiceCard({ service, onEdit, onDelete, onOpen, onLogCost, an
             <AlertTriangle
               className={`h-4 w-4 ${anomaly.severity === 'critical' ? 'text-destructive' : 'text-yellow-500'}`}
             />
+          )}
+          {isSyncable(service.provider) && onSaveEntry && (
+            <SyncButton service={service} yearMonth={currentYearMonth} onSave={onSaveEntry} />
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
