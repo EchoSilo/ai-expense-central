@@ -1,3 +1,6 @@
+// Allow corporate proxy / self-signed certs for outbound provider API calls
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -35,7 +38,7 @@ app.get("/api/sync/:provider", async (req, res) => {
         supported: true,
       });
     }
-    console.error(`[sync/${provider}]`, err.message);
+    console.error(`[sync/${provider}]`, err.message, err.cause ?? "");
     return res.status(502).json({
       error: `API call failed: ${err.message}`,
       code: "API_ERROR",
