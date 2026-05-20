@@ -68,15 +68,18 @@ export function AIServiceCard({ service, onEdit, onDelete, onOpen }: AIServiceCa
   };
 
   return (
-    <Card className="bg-gradient-card shadow-card hover:shadow-glow transition-all duration-300 border-border/50">
+    <Card
+      onClick={() => onOpen?.(service)}
+      className="bg-gradient-card shadow-card hover:shadow-glow transition-all duration-300 border-border/50 cursor-pointer"
+    >
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
         <div className="space-y-1">
           <CardTitle className="text-sm font-medium text-foreground">
             {service.name}
           </CardTitle>
-          <div className="flex items-center gap-2">
-            <Badge 
-              variant="secondary" 
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge
+              variant="secondary"
               className={`bg-${providerColor}/10 text-${providerColor} border-${providerColor}/20`}
             >
               {service.provider}
@@ -84,28 +87,35 @@ export function AIServiceCard({ service, onEdit, onDelete, onOpen }: AIServiceCa
             <Badge variant="outline" className="text-xs">
               {service.category}
             </Badge>
+            {status !== 'healthy' && (
+              <Badge variant="outline" className={`text-xs ${statusStyles[status]}`}>
+                {status}
+              </Badge>
+            )}
           </div>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="bg-popover border-border">
-            <DropdownMenuItem onClick={() => onEdit(service)}>
-              <Edit className="mr-2 h-4 w-4" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => onDelete(service.id)}
-              className="text-destructive focus:text-destructive"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div onClick={(e) => e.stopPropagation()}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-popover border-border">
+              <DropdownMenuItem onClick={() => onEdit(service)}>
+                <Edit className="mr-2 h-4 w-4" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => onDelete(service.id)}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold text-primary mb-1">
@@ -114,6 +124,9 @@ export function AIServiceCard({ service, onEdit, onDelete, onOpen }: AIServiceCa
             {getBillingText()}
           </span>
         </div>
+        {service.keyLabel && (
+          <p className="text-xs text-muted-foreground font-mono">{service.keyLabel}</p>
+        )}
         {service.nextBilling && (
           <p className="text-xs text-muted-foreground">
             Next billing: {service.nextBilling.toLocaleDateString()}
