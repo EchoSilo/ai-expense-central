@@ -1,51 +1,63 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, DollarSign, Calendar, CreditCard, AlertTriangle } from "lucide-react";
 import { AIService } from "./AIServiceCard";
-import { getMonthOverMonth } from "@/lib/mockUsage";
+import { CostEntry } from "@/lib/types";
 
 interface StatsOverviewProps {
   services: AIService[];
   alertCount: number;
+  entries: CostEntry[];
 }
 
-export function StatsOverview({ services, alertCount = 0 }: StatsOverviewProps) {
-  const totalMonthly = services
-    .filter((s) => s.billingCycle === "monthly")
-    .reduce((sum, s) => sum + s.amount, 0);
+export function StatsOverview({ services, alertCount = 0, entries }: StatsOverviewProps) {
+  const now = new Date();
+  const currentYM = now.toISOString().slice(0, 7);
+  const prevYM = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().slice(0, 7);
 
-  const totalYearly = services
+  const thisMonth = entries
+    .filter((e) => e.yearMonth === currentYM)
+    .reduce((sum, e) => sum + e.amount, 0);
+
+  const lastMonth = entries
+    .filter((e) => e.yearMonth === prevYM)
+    .reduce((sum, e) => sum + e.amount, 0);
+
+  const pct = lastMonth > 0 ? ((thisMonth - lastMonth) / lastMonth) * 100 : 0;
+
+  // Annual cost: annualize this month's real spend, plus any fixed yearly/one-time services
+  const fixedYearly = services
     .filter((s) => s.billingCycle === "yearly")
     .reduce((sum, s) => sum + s.amount, 0);
-
-  const totalOneTime = services
+  const fixedOneTime = services
     .filter((s) => s.billingCycle === "one-time")
     .reduce((sum, s) => sum + s.amount, 0);
-
-  const totalAnnualizedCost = totalMonthly * 12 + totalYearly + totalOneTime;
-
-  const mom = getMonthOverMonth(services);
+  const annualCost = thisMonth * 12 + fixedYearly + fixedOneTime;
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
 
   const pctStr = (p: number) => `${p >= 0 ? "+" : ""}${p.toFixed(1)}%`;
 
+  const hasMoMData = lastMonth > 0 || thisMonth > 0;
+
   const stats = [
     {
       title: "Monthly Spending",
-      value: formatCurrency(mom.thisMonth || totalMonthly),
+      value: formatCurrency(thisMonth),
       icon: Calendar,
-      trend: pctStr(mom.pct),
-      trendUp: mom.pct >= 0,
+      trend: hasMoMData ? pctStr(pct) : "No data yet",
+      trendUp: pct >= 0,
       destructive: false,
+      empty: thisMonth === 0,
     },
     {
       title: "Annual Cost",
-      value: formatCurrency(totalAnnualizedCost),
+      value: formatCurrency(annualCost),
       icon: DollarSign,
-      trend: pctStr(mom.pct),
-      trendUp: mom.pct >= 0,
+      trend: hasMoMData ? pctStr(pct) : "No data yet",
+      trendUp: pct >= 0,
       destructive: false,
+      empty: annualCost === 0,
     },
     {
       title: "Active Services",
@@ -54,6 +66,7 @@ export function StatsOverview({ services, alertCount = 0 }: StatsOverviewProps) 
       trend: `${services.length}`,
       trendUp: true,
       destructive: false,
+      empty: false,
     },
     {
       title: "Active Alerts",
@@ -62,6 +75,7 @@ export function StatsOverview({ services, alertCount = 0 }: StatsOverviewProps) 
       trend: alertCount > 0 ? "needs review" : "all clear",
       trendUp: alertCount === 0,
       destructive: alertCount > 0,
+      empty: false,
     },
   ];
 
@@ -87,7 +101,11 @@ export function StatsOverview({ services, alertCount = 0 }: StatsOverviewProps) 
           <CardContent>
             <div
               className={`text-2xl font-bold mb-1 ${
-                stat.destructive ? "text-destructive" : "text-foreground"
+                stat.destructive
+                  ? "text-destructive"
+                  : stat.empty
+                  ? "text-muted-foreground"
+                  : "text-foreground"
               }`}
             >
               {stat.value}
@@ -111,7 +129,7 @@ export function StatsOverview({ services, alertCount = 0 }: StatsOverviewProps) 
               >
                 {stat.trend}
               </span>
-              {!stat.destructive && (
+              {!stat.destructive && hasMoMData && (
                 <span className="text-muted-foreground ml-1">vs last month</span>
               )}
             </div>

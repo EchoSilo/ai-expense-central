@@ -7,6 +7,13 @@ export interface CostEntry {
   loggedAt: string; // ISO timestamp
 }
 
+export interface DailyEntry {
+  id: string;
+  serviceId: string;
+  date: string; // "YYYY-MM-DD"
+  amount: number;
+}
+
 export interface AnomalyResult {
   isAnomaly: boolean;
   severity: 'warning' | 'critical' | null;

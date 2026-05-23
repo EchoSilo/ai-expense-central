@@ -10,7 +10,6 @@ import { Badge } from "@/components/ui/badge";
 import { ExternalLink, KeyRound, X } from "lucide-react";
 import { Alert, getProviderKeyDocsUrl } from "@/lib/mockUsage";
 import { AIService } from "./AIServiceCard";
-import { ResponsiveContainer, LineChart, Line, YAxis } from "recharts";
 
 interface Props {
   open: boolean;
@@ -35,7 +34,7 @@ export function AlertsDrawer({
         <SheetHeader>
           <SheetTitle className="text-foreground">Active alerts</SheetTitle>
           <SheetDescription className="text-muted-foreground">
-            Suspicious usage patterns detected on your services.
+            Cost anomalies detected on your services.
           </SheetDescription>
         </SheetHeader>
 
@@ -47,10 +46,6 @@ export function AlertsDrawer({
           )}
           {alerts.map((a) => {
             const svc = services.find((s) => s.id === a.serviceId);
-            const sparkData = a.windowEvents.map((e, i) => ({
-              i,
-              cost: e.costUsd,
-            }));
             return (
               <div
                 key={a.id}
@@ -82,21 +77,6 @@ export function AlertsDrawer({
                   >
                     <X className="h-4 w-4" />
                   </Button>
-                </div>
-
-                <div className="h-14">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={sparkData}>
-                      <YAxis hide />
-                      <Line
-                        type="monotone"
-                        dataKey="cost"
-                        stroke="hsl(var(--destructive))"
-                        strokeWidth={2}
-                        dot={false}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
                 </div>
 
                 {svc?.keyLabel && (

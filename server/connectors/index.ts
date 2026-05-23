@@ -3,6 +3,7 @@ export interface SyncResult {
   currency: "USD";
   note: string;
   supported: boolean;
+  dailyAmounts?: { date: string; amount: number }[]; // YYYY-MM-DD
 }
 
 export type ConnectorFn = (yearMonth: string) => Promise<SyncResult>;

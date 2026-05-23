@@ -15,10 +15,16 @@ export async function elevenlabsConnector(_yearMonth: string): Promise<SyncResul
   const tier: string = json.tier ?? "unknown";
   const pct = ((used / limit) * 100).toFixed(1);
 
-  return {
-    amount: 0,
-    currency: "USD",
-    note: `ElevenLabs: ${used.toLocaleString()}/${limit.toLocaleString()} chars used (${pct}%, ${tier} plan) — enter invoice amount manually`,
-    supported: true,
-  };
+  // Surface the upcoming invoice amount if available
+  const nextInvoiceCents: number = json.next_invoice?.amount_due_cents ?? 0;
+  const overage: number = parseFloat(json.current_overage?.amount ?? "0");
+  const amount = nextInvoiceCents > 0
+    ? Math.round((nextInvoiceCents / 100 + overage) * 100) / 100
+    : 0;
+
+  const note = amount > 0
+    ? `ElevenLabs: ${used.toLocaleString()}/${limit.toLocaleString()} chars (${pct}%, ${tier}) — $${amount.toFixed(2)} due`
+    : `ElevenLabs: ${used.toLocaleString()}/${limit.toLocaleString()} chars (${pct}%, ${tier}) — enter invoice amount manually`;
+
+  return { amount, currency: "USD", note, supported: true };
 }
