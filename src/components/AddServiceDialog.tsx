@@ -35,6 +35,11 @@ const AI_PROVIDERS = [
   'GitHub',
   'Replicate',
   'Stability AI',
+  'ElevenLabs',
+  'AssemblyAI',
+  'HeyGen',
+  'Replit',
+  'Lovable',
   'Other'
 ];
 

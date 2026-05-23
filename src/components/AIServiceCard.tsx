@@ -1,13 +1,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import { MoreHorizontal, Edit, Trash2, AlertTriangle, PlusCircle, BarChart2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { AnomalyResult, CostEntry } from "@/lib/types";
+import { SyncButton } from "@/components/SyncButton";
+import { isSyncable } from "@/lib/providerKey";
 
 export interface AIService {
   id: string;
@@ -29,6 +33,10 @@ interface AIServiceCardProps {
   onEdit: (service: AIService) => void;
   onDelete: (id: string) => void;
   onOpen?: (service: AIService) => void;
+  onLogCost?: (service: AIService) => void;
+  onSaveEntry?: (entry: Omit<CostEntry, "id" | "loggedAt">) => void;
+  yearMonth?: string;
+  anomaly?: AnomalyResult | null;
 }
 
 const getProviderColor = (provider: string) => {
@@ -41,11 +49,17 @@ const getProviderColor = (provider: string) => {
     'GitHub': 'github',
     'Replicate': 'replicate',
     'Stability AI': 'stability',
+    'ElevenLabs': 'primary',
+    'AssemblyAI': 'google',
+    'HeyGen': 'replicate',
+    'Replit': 'github',
+    'Lovable': 'anthropic',
   };
   return colors[provider] || 'primary';
 };
 
-export function AIServiceCard({ service, onEdit, onDelete, onOpen }: AIServiceCardProps) {
+export function AIServiceCard({ service, onEdit, onDelete, onOpen, onLogCost, onSaveEntry, yearMonth, anomaly }: AIServiceCardProps) {
+  const currentYearMonth = yearMonth ?? new Date().toISOString().slice(0, 7);
   const providerColor = getProviderColor(service.provider);
   const status = service.keyStatus ?? 'healthy';
   const statusStyles: Record<string, string> = {
@@ -94,7 +108,15 @@ export function AIServiceCard({ service, onEdit, onDelete, onOpen }: AIServiceCa
             )}
           </div>
         </div>
-        <div onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          {anomaly?.isAnomaly && (
+            <AlertTriangle
+              className={`h-4 w-4 ${anomaly.severity === 'critical' ? 'text-destructive' : 'text-yellow-500'}`}
+            />
+          )}
+          {isSyncable(service.provider) && onSaveEntry && (
+            <SyncButton service={service} yearMonth={currentYearMonth} onSave={onSaveEntry} />
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
@@ -102,10 +124,20 @@ export function AIServiceCard({ service, onEdit, onDelete, onOpen }: AIServiceCa
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-popover border-border">
+              <DropdownMenuItem onClick={() => onLogCost?.(service)}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Log Cost
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => onEdit(service)}>
                 <Edit className="mr-2 h-4 w-4" />
                 Edit
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onOpen?.(service)}>
+                <BarChart2 className="mr-2 h-4 w-4" />
+                View Trend
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => onDelete(service.id)}
                 className="text-destructive focus:text-destructive"
@@ -124,6 +156,11 @@ export function AIServiceCard({ service, onEdit, onDelete, onOpen }: AIServiceCa
             {getBillingText()}
           </span>
         </div>
+        {anomaly?.isAnomaly && (
+          <p className={`text-xs font-medium mb-1 ${anomaly.severity === 'critical' ? 'text-destructive' : 'text-yellow-500'}`}>
+            {anomaly.deviationPct > 0 ? '+' : ''}{anomaly.deviationPct.toFixed(0)}% vs baseline
+          </p>
+        )}
         {service.keyLabel && (
           <p className="text-xs text-muted-foreground font-mono">{service.keyLabel}</p>
         )}
